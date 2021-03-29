@@ -23,25 +23,30 @@ ui <- fluidPage(
   
   sidebarLayout(
     sidebarPanel(
-      h1("Portfolio explorer") ,
-      selectInput("portfolio", 
-                  label = "Choose a portfolio to display",
-                  choices = c("All",unique(df_budget$Portfolio)),
-                  selected = "All"), 
+      h1("Portfolio selection") ,
+      selectInput(
+        "portfolio",
+        label = "Choose a portfolio to filter the table",
+        choices = c("All", unique(df_budget$Portfolio)),
+        selected = "All"
+      ),
     ),
-    mainPanel(
-      
-      tableOutput("selected_port")
-      
- 
-    )
+    mainPanel(DT::dataTableOutput("selected_port"))
   )
 )
 # server.R ----
 server <- function(input, output) {
-  
-  output$selected_port <- renderTable({ 
-    df_budget %>% filter(Portfolio == input$portfolio)
+  output$selected_port <- DT::renderDataTable({
+    if (input$portfolio != "All") {
+      df_budget <-  df_budget %>% filter(Portfolio == input$portfolio)
+    }
+    
+    #plot table
+    df_budget %>% select(Portfolio, `Level 3` = level3, everything()) %>%
+      mutate(`Cash terms change - %` = 100 * `Cash terms change - %`) %>%
+      mutate_if(is.numeric , ~ round(., 2))     %>%
+      DT::datatable(rownames = FALSE)
+    
   })
   
   
