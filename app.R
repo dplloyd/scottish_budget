@@ -13,96 +13,235 @@ library(ggplot2)  # For creating pretty plots
 library(dplyr)  # For filtering and manipulating data
 library(formattable) # For pretty table formatting
 library(sunburstR)
+library(plotly)
+library(DT)
+library(tidyverse)
 
 # Loading data ----
 load("data/app_data.rdata")
 
 # ui.R ----
 ui <- dashboardPage(
+  dashboardHeader(title = "Testing shinydashboard and widgets", titleWidth = 450),
   
-  dashboardHeader(title = "Demo Budget Dashboard with minimal formatting", titleWidth = 450),
   
-  
-  dashboardSidebar( 
+  dashboardSidebar(
     sidebarMenu(
-      menuItem("2021-22 Budget", tabName = "2021-22_budget", icon = icon("coins")),
-      menuItem("Outturn", icon = icon("receipt"), tabName = "widgets",
-               badgeLabel = "new", badgeColor = "green")
+      menuItem(
+        "2021-22 Budget",
+        tabName = "2021-22_budget",
+        icon = icon("coins")
+      ),
+      menuItem("Outturn",
+               icon = icon("receipt"),
+               tabName = "widgets")
+      ,
+      
+      selectInput(
+        "portfolio",
+        label = "Select a portfolio",
+        choices = c("All", unique(df_budget$Portfolio)),
+        selected = "All"
+      )
+      ,
+      menuItem(
+        "Notes",
+        tabName = "readme",
+        icon = icon("book-reader"),
+        badgeLabel = "read me",
+        badgeColor = "red"
+      )
     )
-   
-  ) ,
-  dashboardBody(
-    fluidRow(
-      column(width = 3,
-    h1("Portfolio selection") ,
-    selectInput(
-      "portfolio",
-      label = "Select a portfolio",
-      choices = c("All", unique(df_budget$Portfolio)),
-      selected = "All"
+  )
+  ,
+  dashboardBody(tabItems(
+    tabItem(
+      tabName = "2021-22_budget",
+      
+      fluidRow(column(
+        width = 9,
+        
+        
+        h4(
+          "Example: A sunburst chart visualising the hierarchy of budget lines"
+        ),
+        h4("Hovering over 'leaves' provides information "),
+        sund2bOutput("s2b")
+      )),
+      
+      
+      h4(
+        "Example: A table showing Level 3 changes for the selected Portfolio. The table is scrollable, searchable and sortable."
+      ),
+      
+      dataTableOutput("selected_port")
+      
     ),
     
-    selectInput(
-      "year_select",
-      label = "Select a year",
-      choices = c("2018-19", "2019-20", "2020-21", "2021-22"),
-      selected = "2021-22"
-    )
-    ),
+    tabItem(tabName = "widgets",
+            fluidRow(
+              h2(
+                "Example: Bar charts showing outturn and Level 2 line details. Selectable using input menu."
+              ),
+              column((width = 4),
+                     h3("A chart"),
+                     plotlyOutput("outturn_plot")),
+              
+              column(width = 8,
+                     h3("A table"),
+                     
+                   dataTableOutput("outturn_table"))
+            )),
     
-    column(width = 9,
-    h4("Example: A table showing key Level 3 data for the selected Portfolio. The table is scrollable and sortable."),
+    tabItem(tabName = "readme",
+            includeMarkdown("readme.md"))
     
-    DT::dataTableOutput("selected_port"))
-    
-    
-  
+  ))
 )
-))
 
 server <- function(input, output) {
-  output$selected_port <- DT::renderDataTable({
-    
+  output$selected_port <- renderDataTable({
     if (input$portfolio != "All") {
       df_budget <-  df_budget %>% filter(Portfolio == input$portfolio)
     }
     
     #plot table
-    #First we make some edits to volumns names and rounding
-   df_budget <-  df_budget %>% select(Portfolio, `Level 3` = level3, everything()) %>%
+    #First we make some edits to columns names and rounding
+    df_budget <-
+      df_budget %>% select(Portfolio, `Level 3` = level3, everything()) %>%
       mutate(`Cash terms change - %` = 100 * `Cash terms change - %`) %>%
-      mutate_if(is.numeric , ~ round(., 2))  
-   
-   #Then we use formattable to add some nice formatting
-   df_budget <- 
-     df_budget %>% 
-     mutate(dummy_pc_change = `Cash terms change - %` ) %>% 
-     formattable(list(dummy_pc_change = formatter("span", style = ~style  (
-       color =
-         ifelse(`Cash terms change - %` < 0 ,'purple',ifelse(`Cash terms change - %` > 0,'orange','darkgray'))
-       
-         ),
-       
-       ~icontext(ifelse(`Cash terms change - %` > 0, "arrow-up", ifelse(`Cash terms change - %` < 0,"arrow-down","minus")))
-     )))
-   
-   
-   # Finally we convert to a datatable and display
-   df_budget %>% formattable::as.datatable(
-     rownames = FALSE,
-     options = list(
-       pageLength = 5,
-       paging = FALSE,
-       scrollInfinite = TRUE,
-       scrollY = '300px',
-       scrollCollapse = TRUE
-     ) )
+      mutate_if(is.numeric , ~ round(., 2))
+    
+    #Then we use formattable to add some nice formatting
+    df_budget <-
+      df_budget %>%
+      mutate(dummy_pc_change = `Cash terms change - %`) %>%
+      formattable(list(dummy_pc_change = formatter(
+        "span", style = ~ formattable::style  (color =
+                                    ifelse(
+                                      `Cash terms change - %` < 0 ,
+                                      'purple',
+                                      ifelse(`Cash terms change - %` > 0, 'orange', 'darkgray')
+                                    )),
+        
+        ~ formattable::icontext(ifelse(
+          `Cash terms change - %` > 0,
+          "arrow-up",
+          ifelse(`Cash terms change - %` < 0, "arrow-down", "minus")
+        ))
+      )))
+    
+    
+    # Finally we convert to a datatable and display
+    df_budget %>% formattable::as.datatable(
+      rownames = FALSE,
+      options = list(
+        pageLength = 5,
+        paging = FALSE,
+        scrollInfinite = TRUE,
+        scrollY = '300px',
+        scrollCollapse = TRUE
+      )
+    )
+    
+    
+  })
+  #options(shiny.trace = TRUE)
+  output$s2b <- renderSund2b({
+    toplot <-
+      level4data %>% select(portfolio, level2, level3, level4, scottish_budget_2021) %>%
+      mutate(scottish_budget_2021 = abs(scottish_budget_2021))
+    
+    if (input$portfolio != "All") {
+      toplot <- toplot %>% filter(portfolio == input$portfolio)
+    }
+    
+    test1 = toplot %>% mutate(
+      v1 = paste(
+        toplot$portfolio,
+        toplot$level2,
+        toplot$level3,
+        toplot$level4,
+        sep = "-"
+      ),
+      v2 = scottish_budget_2021
+    ) %>%
+      select(v1, v2)
+    
+    s2b <- sund2b(test1)
+    s2b
+    
+    add_shiny(s2b)
+  })
+  
+  output$outturn_table <- DT::renderDataTable({
+    if (input$portfolio != "All") {
+      outturn_toplot <- df_outturn %>%
+        filter(portfolio == input$portfolio)
+    }
+    else{
+      outturn_toplot <- df_outturn
+    }
+    
+    
+    outturn_toplot %>%
+      select(portfolio, level2, year, outturn, measure) %>%
+      pivot_wider(names_from = year, values_from = outturn) %>%
+      DT::datatable(
+        rownames = FALSE,
+        options = list(
+          pageLength = 5,
+          paging = FALSE,
+          scrollInfinite = TRUE,
+          scrollY = '300px',
+          scrollCollapse = TRUE
+        )
+      )
     
     
   })
   
   
+  output$outturn_plot <- renderPlotly({
+    if (input$portfolio != "All") {
+      outturn_toplot <- df_outturn %>%
+        filter(portfolio == input$portfolio)
+    }
+    else{
+      outturn_toplot <- df_outturn
+    }
+    
+    (
+      outturn_toplot %>%
+        group_by(year, measure) %>%
+        summarise(total_outturn = sum(outturn, na.rm = TRUE)) %>%
+        ggplot() +
+        geom_col(
+          aes(
+            x = as.factor(year),
+            y = total_outturn,
+            fill = measure
+          ),
+          position = position_dodge()
+        ) +
+        theme(
+          panel.background = element_rect(fill = "transparent"),
+          # bg of the panel
+          plot.background = element_rect(fill = "transparent", color = NA),
+          # bg of the plot
+          panel.grid.major = element_blank(),
+          # get rid of major grid
+          panel.grid.minor = element_blank(),
+          # get rid of minor grid
+          legend.background = element_rect(fill = "transparent"),
+          # get rid of legend bg
+          legend.box.background = element_rect(fill = "transparent") # get rid of legend panel bg
+        )
+    ) %>%
+      ggplotly()
+    
+  })
+  
 }
-
 # Run the app ----
 shinyApp(ui = ui, server = server)

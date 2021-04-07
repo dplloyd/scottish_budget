@@ -40,7 +40,8 @@ df_outturn <-
     names_to = "year",
     values_to = "outturn"
   ) %>%
-  mutate(year = as.numeric(year))
+  mutate(year = as.numeric(year),
+         outturn = round(outturn,2))
 
 
 
@@ -101,37 +102,30 @@ colnames(level4data) <- variable_names
 level4data <- level4data %>% select(-tmp)  #delete first column
 level4data <- level4data[!level4data$fiscal_resource_2020=="fiscal_resource_2020", ] # column names got mixed in with the data
 level4data <- level4data[!is.na(level4data$level4) | (!is.na(level4data$portfolio)),]
+level4data <- level4data %>% filter(!is.na(level4))
+
+
 # Check data types in columns. We see there are characters where we want numbers
 level4data %>% map_chr(class)
 
 #converting character columns to numeric where needed
 level4data <- level4data %>% mutate_at(vars(ends_with("2020")),as.numeric) %>% 
   mutate_at(vars(ends_with("2021")),as.numeric) %>% 
-  mutate(percentage_change = as.numeric(percentage_change))
+  mutate(percentage_change = as.numeric(percentage_change)) %>% 
+  select(-level4_alt)
 
 level4data %>% map_chr(class)
 
+# dashes are used as delimiter character in the sunburst plot,
+# so where they appear in hierarchy entry, they split to another"
+# level. So, replace with colons.
+level4data <-
+  level4data %>% mutate(
+    level2  = str_replace(level2, "-", ":"),
+    level3  = str_replace(level3, "-", ":"),
+    level4  = str_replace(level4, "-", ":"),
+  )
 
 # Save to rds
 save.image("data/app_data.rdata")
 
-# # Testing plots
-# fig <- totals %>% plot_ly(values = ~ budget21, labels = ~ Portfolio)
-# fig <- fig %>% add_pie(hole = 0.6)
-# fig <-
-#   fig %>% layout(
-#     title = "Donut charts using Plotly",
-#     showlegend = F,
-#     xaxis = list(
-#       showgrid = FALSE,
-#       zeroline = FALSE,
-#       showticklabels = FALSE
-#     ),
-#     yaxis = list(
-#       showgrid = FALSE,
-#       zeroline = FALSE,
-#       showticklabels = FALSE
-#     )
-#   )
-# 
-# fig
