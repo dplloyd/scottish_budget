@@ -32,10 +32,16 @@ ui <- navbarPage(
     "2021-22 Budget", icon = icon("coins"),
     
     fluidRow(column(1),
-             column(8,
+             column(5,
                     h1("Budget lines"),
                     uiOutput("subheader")),
-             column(2, #align = "right",
+             column(4, selectInput(
+               "portfolio",
+               label = "Select a portfolio",
+               choices = c("All", unique(df_budget$Portfolio)),
+               selected = "All"
+             ),),
+             column(1, #align = "right",
                     style = "margin-top: 25px;",
                     tags$a(img(src = "bilbo.png",
                                height = 60,
@@ -45,32 +51,24 @@ ui <- navbarPage(
     hr(),
     
     fluidRow(column(1),
-      column(9,
+      column(5,
       sund2bOutput("s2b")
+    ),
+    column(6,
+           h4(
+             "We can embed tables which react to user input. For example, you can search, scroll and filter this table."
+           ),
+           
+           dataTableOutput("selected_port")
     )),
     
-    fluidRow(column(1), 
-             column(9,
-      h4(
-        "We can embed tables which react to user input. For example, you can search, scroll and filter this table."
-      ),
-      
-      dataTableOutput("selected_port")
-      
-      
-    )
-    )
+  
     ),
     
     tabPanel(
       "Outturn",
       icon = icon("receipt"),
-      selectInput(
-        "portfolio",
-        label = "Select a portfolio",
-        choices = c("All", unique(df_budget$Portfolio)),
-        selected = "All"
-      ),
+     
       fluidRow(
         h2(
           "Example: Bar charts showing outturn and Level 2 line details. Selectable using input menu."
@@ -125,8 +123,8 @@ server <- function(input, output) {
           style = ~ formattable::style  (color =
                                            ifelse(
                                              `Cash terms change - %` < 0 ,
-                                             'purple',
-                                             ifelse(`Cash terms change - %` > 0, 'orange', 'darkgray')
+                                             'darkgray',
+                                             ifelse(`Cash terms change - %` > 0, 'blue', 'darkgray')
                                            )),
           
           ~ formattable::icontext(ifelse(
@@ -135,18 +133,29 @@ server <- function(input, output) {
             ifelse(`Cash terms change - %` < 0, "arrow-down", "minus")
           ))
         )
-      ))
+      )) 
     
     
     # Finally we convert to a datatable and display
     df_budget %>% formattable::as.datatable(
       rownames = FALSE,
+      class = 'row-border compact',
+      colnames = c(
+        "Portfolio",
+        "Level 3",
+        "2020-21 (£m)",
+        "2021-22 (£m)",
+        "Cash terms change (£m)",
+        "Cash terms change (%)",
+        ""
+      ) ,
       options = list(
         pageLength = 5,
         paging = FALSE,
         scrollInfinite = TRUE,
         scrollY = '300px',
         scrollCollapse = TRUE
+        
       )
     )
     
@@ -217,6 +226,7 @@ server <- function(input, output) {
       outturn_toplot <- df_outturn
     }
     
+
     (
       outturn_toplot %>%
         group_by(year, measure) %>%
@@ -251,8 +261,7 @@ server <- function(input, output) {
   
   output$subheader <- renderUI({
     tagList(
-      "This dashboard is a demonstration of some data visualisations of published 
-      Scottish Budget data."
+      "This site is a sandbox demo of some Shiny data visualisations, using published Scottish Budget data"
     )
   })
   
