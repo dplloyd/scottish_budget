@@ -21,83 +21,86 @@ library(tidyverse)
 load("data/app_data.rdata")
 
 # ui.R ----
-ui <- dashboardPage(
-  dashboardHeader(title = "Testing shinydashboard and widgets", titleWidth = 450),
+ui <- navbarPage(
+  position = "fixed-top",
   
+  tags$head(includeCSS("www/style.css")),
   
-  dashboardSidebar(
-    sidebarMenu(
-      menuItem(
-        "2021-22 Budget",
-        tabName = "2021-22_budget",
-        icon = icon("coins")
+  windowTitle = "Scottish Budget",
+ 
+  tabPanel(
+    "2021-22 Budget", icon = icon("coins"),
+    
+    fluidRow(column(1),
+             column(8,
+                    h1("Budget lines"),
+                    uiOutput("subheader")),
+             column(2, #align = "right",
+                    style = "margin-top: 25px;",
+                    tags$a(img(src = "bilbo.png",
+                               height = 60,
+                               alt = "Bilbo"), 
+                           href = "https://www.google.co.uk")),
+             column(1)),
+    hr(),
+    
+    fluidRow(column(1),
+      column(9,
+      sund2bOutput("s2b")
+    )),
+    
+    fluidRow(column(1), 
+             column(9,
+      h4(
+        "We can embed tables which react to user input. For example, you can search, scroll and filter this table."
       ),
-      menuItem("Outturn",
-               icon = icon("receipt"),
-               tabName = "widgets")
-      ,
       
+      dataTableOutput("selected_port")
+      
+      
+    )
+    )
+    ),
+    
+    tabPanel(
+      "Outturn",
+      icon = icon("receipt"),
       selectInput(
         "portfolio",
         label = "Select a portfolio",
         choices = c("All", unique(df_budget$Portfolio)),
         selected = "All"
-      )
-      ,
-      menuItem(
-        "Notes",
-        tabName = "readme",
-        icon = icon("book-reader"),
-        badgeLabel = "read me",
-        badgeColor = "red"
-      )
-    )
-  )
-  ,
-  dashboardBody(tabItems(
-    tabItem(
-      tabName = "2021-22_budget",
-      
-      fluidRow(column(
-        width = 9,
-        
-        
-        h4(
-          "Example: A sunburst chart visualising the hierarchy of budget lines"
-        ),
-        h4("Hovering over 'leaves' provides information "),
-        sund2bOutput("s2b")
-      )),
-      
-      
-      h4(
-        "Example: A table showing Level 3 changes for the selected Portfolio. The table is scrollable, searchable and sortable."
       ),
-      
-      dataTableOutput("selected_port")
-      
+      fluidRow(
+        h2(
+          "Example: Bar charts showing outturn and Level 2 line details. Selectable using input menu."
+        ),
+        column((width = 4),
+               h3("A chart"),
+               plotlyOutput("outturn_plot")),
+        
+        column(width = 8,
+               h3("A table"),
+               
+               dataTableOutput("outturn_table"))
+        
+      )
     ),
-    
-    tabItem(tabName = "widgets",
-            fluidRow(
-              h2(
-                "Example: Bar charts showing outturn and Level 2 line details. Selectable using input menu."
-              ),
-              column((width = 4),
-                     h3("A chart"),
-                     plotlyOutput("outturn_plot")),
-              
-              column(width = 8,
-                     h3("A table"),
-                     
-                   dataTableOutput("outturn_table"))
-            )),
-    
-    tabItem(tabName = "readme",
-            includeMarkdown("readme.md"))
-    
-  ))
+    tabPanel(
+      "Notes",
+      icon = icon("book-reader"),
+      tabItem(tabName = "readme",
+              column(1),
+              column(4,
+              includeMarkdown("readme.md"))
+      
+    )
+    )
+  
+
 )
+
+
 
 server <- function(input, output) {
   output$selected_port <- renderDataTable({
@@ -116,20 +119,23 @@ server <- function(input, output) {
     df_budget <-
       df_budget %>%
       mutate(dummy_pc_change = `Cash terms change - %`) %>%
-      formattable(list(dummy_pc_change = formatter(
-        "span", style = ~ formattable::style  (color =
-                                    ifelse(
-                                      `Cash terms change - %` < 0 ,
-                                      'purple',
-                                      ifelse(`Cash terms change - %` > 0, 'orange', 'darkgray')
-                                    )),
-        
-        ~ formattable::icontext(ifelse(
-          `Cash terms change - %` > 0,
-          "arrow-up",
-          ifelse(`Cash terms change - %` < 0, "arrow-down", "minus")
-        ))
-      )))
+      formattable(list(
+        dummy_pc_change = formatter(
+          "span",
+          style = ~ formattable::style  (color =
+                                           ifelse(
+                                             `Cash terms change - %` < 0 ,
+                                             'purple',
+                                             ifelse(`Cash terms change - %` > 0, 'orange', 'darkgray')
+                                           )),
+          
+          ~ formattable::icontext(ifelse(
+            `Cash terms change - %` > 0,
+            "arrow-up",
+            ifelse(`Cash terms change - %` < 0, "arrow-down", "minus")
+          ))
+        )
+      ))
     
     
     # Finally we convert to a datatable and display
@@ -242,6 +248,17 @@ server <- function(input, output) {
     
   })
   
+  
+  output$subheader <- renderUI({
+    tagList(
+      "This dashboard is a demonstration of some data visualisations of published 
+      Scottish Budget data."
+    )
+  })
+  
 }
+
+
+
 # Run the app ----
 shinyApp(ui = ui, server = server)
