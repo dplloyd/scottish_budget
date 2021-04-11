@@ -75,18 +75,4 @@ shape_for_treemap <- treemap_df %>%
 
 }
 
-df_f <- shape_for_treemap(level4data)
 
-# basic treemap
-fig <- plot_ly(
-  type = "treemap",
-  ids = df_f$ids,
-  labels = df_f$labels,
-  parents = df_f$parents,
-  values = df_f$scottish_budget_2021,
-  textinfo = "label+value",
-  domain = list(column = 1),
-  maxdepth = 2
-)
-
-fig
