@@ -5,6 +5,8 @@ library(RColorBrewer)
 
 load('data/app_data.rdata')
 
+
+shape_for_treemap <- function(level4data){
 # Create subtotals for each hierarchy level.
 
 level4data <- level4data %>%
@@ -45,7 +47,7 @@ treemap_df <- treemap_df %>%
 
 
 
-df <- treemap_df %>%
+shape_for_treemap <- treemap_df %>%
   mutate(ids = case_when(
     !is.na(level4) ~ paste0(level3, "-", level4),
     (is.na(level4) & !is.na(level3)) ~ paste0(level2, "-", level3),
@@ -71,7 +73,9 @@ df <- treemap_df %>%
     )
   )
 
-df_f <- df
+}
+
+df_f <- shape_for_treemap(level4data)
 
 # basic treemap
 fig <- plot_ly(
@@ -81,8 +85,8 @@ fig <- plot_ly(
   parents = df_f$parents,
   values = df_f$scottish_budget_2021,
   textinfo = "label+value",
-  domain = list(column = 0),
-  maxdepth = 5
+  domain = list(column = 1),
+  maxdepth = 2
 )
 
 fig
