@@ -92,21 +92,31 @@ ui <- navbarPage(
         "Outturn",
         icon = icon("receipt"),
         
-        fluidRow(
-            h2(
+        fluidRow( column(1),
+                  column(3,
+            h4(
                 "Example: Bar charts showing outturn and Level 2 line details. Selectable using input menu."
             ),
-            column((width = 4),
-                   h3("A chart"),
-                   plotlyOutput("outturn_plot")),
             
-            column(width = 8,
-                   h3("A table"),
+            selectInput(
+                "portfolio_outturn",
+                label = "Select a portfolio",
+                choices = c("All", unique(df_budget$Portfolio)),
+                selected = "All")
+            ),
+          column(6,
+                   h4("A chart showing selected portfolio outturn."),
+                   plotlyOutput("outturn_plot")),
+          ),
+        fluidRow( column(1),
+            column(width = 9,
+                   h4("A table showing selected portfolio Level 2 details."),
                    
                    dataTableOutput("outturn_table"))
             
-        )
+            )
     ),
+   
     tabPanel(
         "Notes",
         icon = icon("book-reader"),

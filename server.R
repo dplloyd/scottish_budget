@@ -7,6 +7,7 @@
 #    http://shiny.rstudio.com/
 #
 
+library(sparkline)
 
 
 server <- function(input, output) {
@@ -99,13 +100,15 @@ server <- function(input, output) {
     })
     
     output$outturn_table <- DT::renderDataTable({
-        if (input$portfolio != "All") {
+        if (input$portfolio_outturn != "All") {
             outturn_toplot <- df_outturn %>%
-                filter(portfolio == input$portfolio)
+                filter(portfolio == input$portfolio_outturn)
         }
         else{
             outturn_toplot <- df_outturn
         }
+        
+        #sparkline data
         
         
         outturn_toplot %>%
@@ -127,9 +130,9 @@ server <- function(input, output) {
     
     
     output$outturn_plot <- renderPlotly({
-        if (input$portfolio != "All") {
+        if (input$portfolio_outturn != "All") {
             outturn_toplot <- df_outturn %>%
-                filter(portfolio == input$portfolio)
+                filter(portfolio == input$portfolio_outturn)
         }
         else{
             outturn_toplot <- df_outturn
@@ -161,8 +164,8 @@ server <- function(input, output) {
                     legend.background = element_rect(fill = "transparent"),
                     # get rid of legend bg
                     legend.box.background = element_rect(fill = "transparent") # get rid of legend panel bg
-                )
-        ) %>%
+                ) + scale_fill_manual(values = c("#0065bd","#727272"))
+        )  %>% 
             ggplotly()
         
     })
