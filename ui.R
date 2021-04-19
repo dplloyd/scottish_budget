@@ -53,7 +53,7 @@ ui <- navbarPage(
                    
                    fluidRow(column(1),
                             column(5,
-                                   h4("A sunburst plot is one way of visualising hierarchical data. Here, we show Level 2,3 and 4 fiscal resource lines nested within Portfolios."),
+                                   h4("A sunburst plot is one way of visualising hierarchical data. Here, we show Level 2, 3 and 4 fiscal resource lines nested within Portfolios."),
                                    sund2bOutput("s2b")
                             ),
                             column(6,

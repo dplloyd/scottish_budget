@@ -29,9 +29,7 @@ server <- function(input, output) {
         
         #plot table
         #First we make some edits to columns names and rounding
-      
-          select(Portfolio = portfolio, `Level 3` = level3, 
-                 `Cash terms change - %` = change_pc , everything()) %>%
+     
             mutate_if(is.numeric , ~ round(., 2))
         
         #Then we use formattable to add some nice formatting
@@ -42,15 +40,15 @@ server <- function(input, output) {
                     "span",
                     style = ~ formattable::style  (color =
                                                        ifelse(
-                                                           `Cash terms change - %` < 0 ,
+                                                           fiscal2021 < fiscal2020 ,
                                                            'darkgray',
-                                                           ifelse(`Cash terms change - %` > 0, 'blue', 'darkgray')
+                                                           ifelse(fiscal2021 > fiscal2020, 'blue', 'darkgray')
                                                        )),
                     
                     ~ formattable::icontext(ifelse(
-                        `Cash terms change - %` > 0,
+                        fiscal2020 < fiscal2021  ,
                         "arrow-up",
-                        ifelse(`Cash terms change - %` < 0, "arrow-down", "minus")
+                        ifelse(fiscal2020 > fiscal2021 , "arrow-down", "minus")
                     ))
                 )
             )) 
@@ -63,11 +61,10 @@ server <- function(input, output) {
             colnames = c(
                 "Portfolio",
                 "Level 3",
-                "2020-21 (£m)",
-                "2021-22 (£m)",
+                "2020-21 resource (£m)",
+                "2021-22 resource (£m)",
                 "Cash terms change (£m)",
-                "Cash terms change (%)",
-                ""
+                "Cash terms change (%)"
             ) ,
             options = list(
                 pageLength = 5,
