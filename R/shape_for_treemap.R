@@ -11,7 +11,7 @@ shape_for_treemap <- function(level4data){
 
 level4data <- level4data %>%
   mutate(
-    scottish_budget_2021 = abs(scottish_budget_2021),
+    fiscal_resource_2021 = abs(fiscal_resource_2021),
     level2  = str_replace(level2, "/", " or "),
     level3  = str_replace(level3, "/", " or "),
     level4  = str_replace(level4, "/", " or "),
@@ -21,19 +21,19 @@ level4data <- level4data %>%
 treemap_df <- bind_rows(
   level4data %>%
     group_by(portfolio) %>%
-    summarise(scottish_budget_2021 = sum(scottish_budget_2021)),
+    summarise(fiscal_resource_2021 = sum(fiscal_resource_2021)),
   level4data %>%
     group_by(portfolio, level2) %>%
-    summarise(scottish_budget_2021 = sum(scottish_budget_2021)),
+    summarise(fiscal_resource_2021 = sum(fiscal_resource_2021)),
   level4data %>%
     group_by(portfolio, level2, level3) %>%
-    summarise(scottish_budget_2021 = sum(scottish_budget_2021)),
+    summarise(fiscal_resource_2021 = sum(fiscal_resource_2021)),
   level4data %>%
     group_by(portfolio, level2, level3, level4) %>%
-    summarise(scottish_budget_2021 = sum(scottish_budget_2021)),
+    summarise(fiscal_resource_2021 = sum(fiscal_resource_2021)),
 ) %>%
-  bind_rows(level4data %>% summarise(scottish_budget_2021 =  sum(scottish_budget_2021))) %>%
-  mutate(root = "Scottish Budget") %>%
+  bind_rows(level4data %>% summarise(fiscal_resource_2021 =  sum(fiscal_resource_2021))) %>%
+  mutate(root = "Fiscal Resource") %>%
   arrange(root, portfolio, level2, level3)
 
 # Level 2,3 and 4 can't share names within the same tree, so check for those cases and

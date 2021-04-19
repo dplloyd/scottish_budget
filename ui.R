@@ -28,7 +28,7 @@ ui <- navbarPage(
     tags$head(includeCSS("www/style.css")),
     
     windowTitle = "Scottish Budget",
-    navbarMenu("2021-22 Budget", icon = icon("coins"),
+    navbarMenu("2021-22 Resource Budget", icon = icon("coins"),
                tabPanel(
                    "Sunburst", icon = icon("sun"),
                    
@@ -53,7 +53,7 @@ ui <- navbarPage(
                    
                    fluidRow(column(1),
                             column(5,
-                                   h4("A sunburst plot shows the hierarchy of Level 2,3 and 4 lines within Portfolios."),
+                                   h4("A sunburst plot is one way of visualising hierarchical data. Here, we show Level 2,3 and 4 fiscal resource lines nested within Portfolios."),
                                    sund2bOutput("s2b")
                             ),
                             column(6,
@@ -70,7 +70,7 @@ ui <- navbarPage(
                tabPanel("Treemap",icon = icon("th"),
                         fluidRow(column(1),
                                  column(9,
-                                        h4("A treemap plot also shows the hierarchy of Level 2,3 and 4 lines within Portfolios. There will be some distortion of shape sizes, but this can be adjusted. In this example, the size of the boxes are roughly in scale to each other."),
+                                        h4("A treemap plot also shows the hierarchy of Level 2, 3 and 4 lines within Portfolios. Here, the box areas are roughly in proportion to the values they represent. Very small lines can be hard to see however, so sometimes some distortion is required for the sake of readbility, and to make the pieces fit well together."),
                                         hr(),
                                         h4("Clicking on a box provides more detail."),
                                         plotly::plotlyOutput("treemap")

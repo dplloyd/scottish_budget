@@ -16,17 +16,27 @@ server <- function(input, output) {
             df_budget <-  df_budget %>% filter(Portfolio == input$portfolio)
         }
         
+        level3_g <- 
+        level4data %>%
+            dplyr::select(portfolio, level3, fiscal_resource_2020, fiscal_resource_2021) %>%
+            dplyr::group_by(portfolio, level3) %>%
+            summarise(
+                fiscal2020 = sum(fiscal_resource_2020),
+                fiscal2021 = sum(fiscal_resource_2021)
+            ) %>% 
+            mutate(change_abs = fiscal2021 - fiscal2020,
+                   change_pc =  scales::percent( (fiscal2021/fiscal2020)-1)) %>% 
+        
         #plot table
         #First we make some edits to columns names and rounding
-        df_budget <-
-            df_budget %>% select(Portfolio, `Level 3` = level3, everything()) %>%
-            mutate(`Cash terms change - %` = 100 * `Cash terms change - %`) %>%
+      
+          select(Portfolio = portfolio, `Level 3` = level3, 
+                 `Cash terms change - %` = change_pc , everything()) %>%
             mutate_if(is.numeric , ~ round(., 2))
         
         #Then we use formattable to add some nice formatting
-        df_budget <-
-            df_budget %>%
-            mutate(dummy_pc_change = `Cash terms change - %`) %>%
+        level3_g <-
+            level3_g %>%
             formattable(list(
                 dummy_pc_change = formatter(
                     "span",
@@ -47,7 +57,7 @@ server <- function(input, output) {
         
         
         # Finally we convert to a datatable and display
-        df_budget %>% formattable::as.datatable(
+        level3_g %>% formattable::as.datatable(
             rownames = FALSE,
             class = 'row-border compact',
             colnames = c(
@@ -74,8 +84,8 @@ server <- function(input, output) {
     #options(shiny.trace = TRUE)
     output$s2b <- renderSund2b({
         toplot <-
-            level4data %>% select(portfolio, level2, level3, level4, scottish_budget_2021) %>%
-            mutate(scottish_budget_2021 = abs(scottish_budget_2021))
+            level4data %>% select(portfolio, level2, level3, level4, fiscal_resource_2021) %>%
+            mutate(fiscal_resource_2021 = abs(fiscal_resource_2021))
         
         if (input$portfolio != "All") {
             toplot <- toplot %>% filter(portfolio == input$portfolio)
@@ -89,7 +99,7 @@ server <- function(input, output) {
                 toplot$level4,
                 sep = "-"
             ),
-            v2 = scottish_budget_2021
+            v2 = fiscal_resource_2021
         ) %>%
             select(v1, v2)
         
@@ -186,11 +196,12 @@ server <- function(input, output) {
             ids = df_f$ids,
             labels = df_f$labels,
             parents = df_f$parents,
-            values = df_f$scottish_budget_2021,
+            values = df_f$fiscal_resource_2021,
             textinfo = "label+value",
             #domain = list(column = 1),
-            maxdepth = 5,
-            tiling = list(packing = "binary"))
+            maxdepth = 5
+           # tiling = list(packing = "binary")
+           )
         
         fig
     })
