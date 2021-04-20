@@ -11,13 +11,18 @@ library(sparkline)
 
 
 server <- function(input, output) {
+    
+
+    
     output$selected_port <- renderDataTable({
+        #Filter data based on dropdown menu
         if (input$portfolio != "All") {
-            df_budget <-  df_budget %>% filter(Portfolio == input$portfolio)
+            level4data_f  <-  level4data %>% filter(portfolio == input$portfolio)
         }
+        else{level4data_f <- level4data}
         
         level3_g <- 
-        level4data %>%
+        level4data_f %>%
             dplyr::select(portfolio, level3, fiscal_resource_2020, fiscal_resource_2021) %>%
             dplyr::group_by(portfolio, level3) %>%
             summarise(
@@ -25,7 +30,9 @@ server <- function(input, output) {
                 fiscal2021 = sum(fiscal_resource_2021)
             ) %>% 
             mutate(change_abs = fiscal2021 - fiscal2020,
-                   change_pc =  scales::percent( (fiscal2021/fiscal2020)-1)) %>% 
+                   change_pc =  scales::percent( (fiscal2021/fiscal2020)-1,accuracy = 0.1,big.mark = ","),
+                   dummy_pc_change = ""
+                  ) %>% 
         
         #plot table
         #First we make some edits to columns names and rounding
@@ -42,7 +49,7 @@ server <- function(input, output) {
                                                        ifelse(
                                                            fiscal2021 < fiscal2020 ,
                                                            'darkgray',
-                                                           ifelse(fiscal2021 > fiscal2020, 'blue', 'darkgray')
+                                                           ifelse(fiscal2021 > fiscal2020, 'darkgray', 'darkgray')
                                                        )),
                     
                     ~ formattable::icontext(ifelse(
@@ -64,7 +71,8 @@ server <- function(input, output) {
                 "2020-21 resource (£m)",
                 "2021-22 resource (£m)",
                 "Cash terms change (£m)",
-                "Cash terms change (%)"
+                "Cash terms change (%)",
+                ""
             ) ,
             options = list(
                 pageLength = 5,
@@ -88,7 +96,7 @@ server <- function(input, output) {
             toplot <- toplot %>% filter(portfolio == input$portfolio)
         }
         
-        test1 = toplot %>% mutate(
+        hierarchy = toplot %>% mutate(
             v1 = paste(
                 toplot$portfolio,
                 toplot$level2,
@@ -100,9 +108,11 @@ server <- function(input, output) {
         ) %>%
             select(v1, v2)
         
-        s2b <- sund2b(test1)
+        s2b <- sund2b(hierarchy)
+        
         s2b
         
+        #not sure what this does - check
         add_shiny(s2b)
     })
     
@@ -177,12 +187,7 @@ server <- function(input, output) {
         
     })
     
-    
-    output$subheader <- renderUI({
-        tagList(
-            "This site is a sandbox demo of some Shiny data visualisations, using published Scottish Budget data"
-        )
-    })
+
     
     
     output$treemap <- plotly::renderPlotly({
@@ -202,5 +207,22 @@ server <- function(input, output) {
         
         fig
     })
+    
+    #################################################################
+    ##                             Text blocks                      ##
+    #################################################################
+    output$subheader <- renderUI({
+        tagList(
+            "This site is a sandbox demo of some Shiny data visualisations, using published Scottish Budget data"
+        )
+    })
+    
+    output$sunburst_explanation <- renderUI({
+    "A sunburst plot is one way of visualising hierarchical data. Here, we show Level 2, 3 and 4 fiscal resource lines nested within Portfolios."})
+    
+    
+    output$sunburst_table_explanation <- renderUI({
+      "We can embed tables with additional information, which react to user input. For example, in this basic example, we show all Level 3 lines, which you can search, scroll and filter. Small icons indicate if the 2021 line has grown relative to 2020."})
+    
     
 }
